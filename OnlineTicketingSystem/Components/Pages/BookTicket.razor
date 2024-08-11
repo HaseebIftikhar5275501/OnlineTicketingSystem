@@ -1,0 +1,52 @@
+﻿@page "/bookticket"
+@using OnlineTicketingSystem.Services
+@rendermode InteractiveServer
+
+<PageTitle>Counter</PageTitle>
+@inject TicketService TicketService
+
+<h3>Book Ticket</h3>
+
+<div>
+    <label for="ticketId">Enter Ticket ID:</label>
+    <input type="number" id="ticketId" @bind="ticketId" />
+    <label for="userId">UserId:</label>
+    <input type="text" id="userId" @bind="userId" />
+    <button @onclick="OnBookTicket">Book</button>
+</div>
+
+@if (resultMessage != null)
+{
+    <p>@resultMessage</p>
+}
+
+@code {
+    private int ticketId;
+    private string userId;
+    private string resultMessage;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+
+        await base.OnInitializedAsync();
+    }
+
+
+    private async Task OnBookTicket()
+    {
+        var (success, ticket) = await TicketService.TryBookTicketAsync(ticketId, userId);
+
+        if (success)
+        {
+            resultMessage = $"Successfully booked ticket '{ticket.Name}' (ID: {ticket.Id}).";
+        }
+        else
+        {
+            resultMessage = ticket == null
+                ? $"Ticket ID {ticketId} does not exist."
+                : $"Ticket ID {ticketId} has already been booked.";
+        }
+    }
+}
