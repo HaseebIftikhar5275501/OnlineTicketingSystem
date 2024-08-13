@@ -137,6 +137,50 @@ namespace TicketBookingTests
             Assert.Single(trueValues);
 
         }
+
+        [Fact]
+        public async Task BookingConcurrency_ShouldOnlyAllowOneSuccessfulBookingUsingSlimsemaphore()
+        {
+            var ticketId = 9;
+            var tasks = new List<Task>();
+            var successfulBookings = 0;
+            string userId = string.Empty;
+            List<ResponseModel> Result = new List<ResponseModel>();
+            // Act
+            for (int i = 0; i < 10; i++)
+            {
+
+                tasks.Add(Task.Run(async () =>
+                {
+                    userId = Guid.NewGuid().ToString();
+                    using (var scopeFactory = _scopeFactory.CreateScope())
+                    {
+                        var _ticketService = scopeFactory.ServiceProvider.GetRequiredService<ITicketService>();
+                        var (success, bookedTicket) = await _ticketService.TryBookTicketUsingSlimSemaphoreAsync(ticketId, userId);
+                        Result.Add(new ResponseModel
+                        {
+                            Success = success,
+                            Ticket = bookedTicket,
+                            UserId = userId
+                        });
+                        if (success)
+                        {
+                            successfulBookings++;
+                        }
+                    }
+                }));
+            }
+
+            await Task.WhenAll(tasks);
+
+            // Assert
+            Assert.All(tasks, task => Assert.True(task.IsCompletedSuccessfully));
+            Assert.Equal(1, successfulBookings); // Ticket only booked by one user in concurrent requests.
+            var trueValues = Result.Where(x => x.Success);
+            // Assert that there is exactly one true value
+            Assert.Single(trueValues);
+
+        }
     }
 
     public sealed class ResponseModel

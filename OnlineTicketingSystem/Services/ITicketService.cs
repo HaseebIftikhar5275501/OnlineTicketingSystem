@@ -6,5 +6,6 @@ namespace OnlineTicketingSystem.Services
     {
         Task<(bool Success, Ticket? Ticket)> TryBookTicketAsync(int ticketId, string userId);
         Task<(bool Success, Ticket? Ticket)> TryBookTicketUsingLockAsync(int ticketId, string userId);
+        Task<(bool Success, Ticket? Ticket)> TryBookTicketUsingSlimSemaphoreAsync(int ticketId, string userId);
     }
 }

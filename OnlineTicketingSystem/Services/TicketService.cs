@@ -12,6 +12,8 @@ namespace OnlineTicketingSystem.Services
             _context = context;
         }
 
+
+       
         public async Task<(bool Success, Ticket? Ticket)> TryBookTicketAsync(int ticketId, string userId)
         {
             // Start a transaction with a specific isolation level if needed
@@ -107,6 +109,33 @@ namespace OnlineTicketingSystem.Services
 
             await Task.CompletedTask;
             return (success, ticket);
+        }
+
+
+        private static readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
+        public async Task<(bool Success, Ticket? Ticket)> TryBookTicketUsingSlimSemaphoreAsync(int ticketId, string userId)
+        {
+            await _semaphore.WaitAsync();
+            try
+            {
+                var ticket = await _context.Tickets
+                     .FromSqlRaw("SELECT * FROM Tickets WHERE Id = {0}", ticketId)
+                     .SingleOrDefaultAsync();
+                if (ticket == null || ticket.IsBooked)
+                {
+                    return (false, null);
+                }
+
+                // Mark the ticket as booked
+                ticket.IsBooked = true;
+                ticket.UserId = userId;
+                await _context.SaveChangesAsync();
+                return (true, ticket);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
     }
