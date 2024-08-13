@@ -141,7 +141,7 @@ namespace TicketBookingTests
         [Fact]
         public async Task BookingConcurrency_ShouldOnlyAllowOneSuccessfulBookingUsingSlimsemaphore()
         {
-            var ticketId = 9;
+            var ticketId = 11;
             var tasks = new List<Task>();
             var successfulBookings = 0;
             string userId = string.Empty;
